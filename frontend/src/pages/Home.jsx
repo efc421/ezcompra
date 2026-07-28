@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import "../App.css";
 
 import Header from "../components/Header";
 import Hero from "../components/Hero";
@@ -8,12 +9,14 @@ import SellerBanner from "../components/SellerBanner";
 import Footer from "../components/Footer";
 
 import products from "../data/products";
+import { useCart } from "../hooks/useCart";
 
 function Home() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] =
     useState("All Categories");
-  const [cartCount, setCartCount] = useState(0);
+
+  const { addToCart, cartCount } = useCart();
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -39,10 +42,6 @@ function Home() {
       return matchesCategory && matchesSearch;
     });
   }, [searchTerm, selectedCategory]);
-
-  function addToCart() {
-    setCartCount((currentCount) => currentCount + 1);
-  }
 
   return (
     <>
