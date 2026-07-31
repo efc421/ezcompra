@@ -12,6 +12,11 @@ const products = [
         reviews: 128,
         imageLabel: "Headphones",
         imageClass: "product-image-1",
+        images: [
+            "/images/products/headphones-1.jpg",
+            "/images/products/headphones-2.jpg",
+            "/images/products/headphones-3.jpg",
+        ],
     },
     {
         id: 2,
@@ -26,6 +31,11 @@ const products = [
         reviews: 84,
         imageLabel: "Smart Watch",
         imageClass: "product-image-2",
+        images: [
+            "/images/products/smartwatch-1.jpg",
+            "/images/products/smartwatch-2.jpg",
+            "/images/products/smartwatch-3.jpg",
+        ],
     },
     {
         id: 3,
@@ -40,6 +50,11 @@ const products = [
         reviews: 203,
         imageLabel: "Running Shoes",
         imageClass: "product-image-3",
+        images: [
+            "/images/products/shoes-1.jpg",
+            "/images/products/shoes-2.jpg",
+            "/images/products/shoes-3.jpg",
+        ],
     },
     {
         id: 4,
@@ -54,6 +69,11 @@ const products = [
         reviews: 61,
         imageLabel: "Skin Care",
         imageClass: "product-image-4",
+        images: [
+            "/images/products/skincare-1.jpg",
+            "/images/products/skincare-2.jpg",
+            "/images/products/skincare-3.jpg",
+        ],
     },
     {
         id: 5,
@@ -68,6 +88,11 @@ const products = [
         reviews: 92,
         imageLabel: "Car Vacuum",
         imageClass: "product-image-5",
+        images: [
+            "/images/products/vacuum-1.jpg",
+            "/images/products/vacuum-2.jpg",
+            "/images/products/vacuum-3.jpg",
+        ],
     },
     {
         id: 6,
@@ -82,6 +107,11 @@ const products = [
         reviews: 147,
         imageLabel: "Cookware",
         imageClass: "product-image-6",
+        images: [
+            "/images/products/cookware-1.jpg",
+            "/images/products/cookware-2.jpg",
+            "/images/products/cookware-3.jpg",
+        ],
     },
     {
         id: 7,
@@ -96,6 +126,11 @@ const products = [
         reviews: 76,
         imageLabel: "Summer Shirt",
         imageClass: "product-image-7",
+        images: [
+            "/images/products/shirt-1.jpg",
+            "/images/products/shirt-2.jpg",
+            "/images/products/shirt-3.jpg",
+        ],
     },
     {
         id: 8,
@@ -110,6 +145,11 @@ const products = [
         reviews: 316,
         imageLabel: "LED Lights",
         imageClass: "product-image-8",
+        images: [
+            "/images/products/led-lights-1.jpg",
+            "/images/products/led-lights-2.jpg",
+            "/images/products/led-lights-3.jpg",
+        ],
     },
 ];
 
