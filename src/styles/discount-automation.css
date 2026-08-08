@@ -1,0 +1,6 @@
+.field-note {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 500;
+  margin-left: 4px;
+}
