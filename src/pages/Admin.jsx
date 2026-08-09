@@ -70,6 +70,10 @@ export default function Admin() {
   const [queueMessage, setQueueMessage] = useState('');
   const [queueFilter, setQueueFilter] = useState('all');
   const [autoPreparing, setAutoPreparing] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const [productCategory, setProductCategory] = useState('all');
+  const [productStatus, setProductStatus] = useState('all');
+  const [productSort, setProductSort] = useState('newest');
 
   const asin = useMemo(() => extractAmazonAsin(importer.amazonUrl), [importer.amazonUrl]);
   const loadProducts = async () => setProducts(await getAllProducts());
@@ -84,6 +88,44 @@ export default function Admin() {
       )
     ) || null;
   }, [products, importer.amazonUrl, form.asin, form.source_url, form.id]);
+
+  const filteredProducts = useMemo(() => {
+    const search = productSearch.trim().toLowerCase();
+
+    const list = products.filter(product => {
+      const title = String(product.title || '').toLowerCase();
+      const asinValue = String(product.asin || '').toLowerCase();
+      const category = String(product.category || '').toLowerCase();
+
+      const matchesSearch =
+        !search ||
+        title.includes(search) ||
+        asinValue.includes(search) ||
+        category.includes(search);
+
+      const matchesCategory =
+        productCategory === 'all' ||
+        product.category === productCategory;
+
+      const matchesStatus =
+        productStatus === 'all' ||
+        (productStatus === 'live' && product.is_active !== false) ||
+        (productStatus === 'hidden' && product.is_active === false);
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+
+    return [...list].sort((a, b) => {
+      if (productSort === 'price-low') return Number(a.price || 0) - Number(b.price || 0);
+      if (productSort === 'price-high') return Number(b.price || 0) - Number(a.price || 0);
+      if (productSort === 'rating') return Number(b.rating || 0) - Number(a.rating || 0);
+      if (productSort === 'discount') {
+        const discountValue = value => Number(String(value || '').replace(/[^0-9.-]/g, '')) || 0;
+        return Math.abs(discountValue(b.discount)) - Math.abs(discountValue(a.discount));
+      }
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+  }, [products, productSearch, productCategory, productStatus, productSort]);
 
   useEffect(() => {
     session().then(s => {
@@ -429,7 +471,16 @@ export default function Admin() {
       reset();
       await loadProducts();
       setMessage('Product published successfully ✓ Ready for the next product.');
-      setTimeout(() => document.querySelector('.ai-importer')?.scrollIntoView({ behavior:'smooth', block:'start' }), 200);
+
+      setTimeout(() => {
+        const generator = document.querySelector('.single-product-generator');
+        generator?.scrollIntoView({ behavior:'smooth', block:'start' });
+
+        setTimeout(() => {
+          const amazonUrlInput = generator?.querySelector('input[type="url"]');
+          amazonUrlInput?.focus({ preventScroll:true });
+        }, 450);
+      }, 200);
     } catch (error) { setMessage(error.message); }
     finally { setSaving(false); }
   }
@@ -442,8 +493,29 @@ export default function Admin() {
       discount_ends_at:toLocalDateTime(product.discount_ends_at), affiliate_url:product.affiliate_url || '', image_url:product.image_url || '', is_active:product.is_active !== false,
       keywords:arr(product.keywords), pros:arr(product.pros), cons:arr(product.cons), tags:arr(product.tags), specifications:product.specifications || {}
     });
-    setImporter({ amazonUrl:product.source_url || '', title:product.title || '', features:product.long_description || product.description || '', category:product.category || 'electronics' });
-    setPreview(product.image_url || ''); setFile(null); setMessage(''); setContentPackOpen(Boolean(product.seo_title)); window.scrollTo({top:0,behavior:'smooth'});
+
+    setImporter({
+      amazonUrl:product.source_url || '',
+      title:product.title || '',
+      features:product.long_description || product.description || '',
+      category:product.category || 'electronics'
+    });
+
+    setPreview(product.image_url || '');
+    setFile(null);
+    setMessage('Editing product — review your changes, then click Save changes.');
+    setContentPackOpen(Boolean(product.seo_title));
+
+    setTimeout(() => {
+      const formEl = document.querySelector('.product-form');
+      formEl?.scrollIntoView({ behavior:'smooth', block:'start' });
+
+      setTimeout(() => {
+        const titleInput = formEl?.querySelector('input[placeholder="Wireless Earbuds"]');
+        titleInput?.focus({ preventScroll:true });
+        titleInput?.select();
+      }, 450);
+    }, 50);
   }
 
   if (checking) return <main><div className="login-card">Loading…</div></main>;
@@ -459,44 +531,248 @@ export default function Admin() {
         <div className="dashboard-title"><div><span className="mini-label">EZCOMPRA · LAUNCH CONTROL</span><h1>Your daily deals</h1><p>Queue products in bulk, prepare them with AI, review, and publish.</p></div><a href="index.html" target="_blank" className="preview-button">Preview website ↗</a></div>
         {!cloudReady && <div className="notice"><strong>Local preview mode:</strong> Product publishing works locally. Connect Supabase + the AI Edge Function for the live cloud workflow.</div>}
 
-        <section className="ai-importer">
-          <div className="ai-importer-heading"><div><span className="ai-spark">🚀</span><div><span className="mini-label">PRODUCT PIPELINE</span><h2>Queue Amazon products</h2></div></div><span className="phase-chip">{queue.length} in queue</span></div>
-          <label>Amazon URLs — one per line<textarea className="source-facts" value={bulkUrls} onChange={e=>setBulkUrls(e.target.value)} placeholder={'https://www.amazon.com/dp/B0...\nhttps://www.amazon.com/dp/B0...\nhttps://www.amazon.com/dp/B0...'}/></label>
-          <button type="button" className="generate-button" onClick={handleQueueProducts} disabled={!bulkUrls.trim()}>🚀 Queue Products</button>
-          {queueMessage && <p className="ai-message">{queueMessage}</p>}
-          {queue.length > 0 && <div className="content-pack" style={{marginTop:'18px'}}><div className="content-pack-body">
-            <div style={{display:'flex',gap:'8px',flexWrap:'wrap',marginBottom:'14px'}}>
-              {['all','queued','loaded','needs-review'].map(value => <button key={value} type="button" className={queueFilter===value?'publish-button':'cancel-button'} style={{width:'auto',padding:'10px 14px'}} onClick={()=>setQueueFilter(value)}>{value==='all'?`All (${queueCounts.all})`:value==='queued'?`Queued (${queueCounts.queued})`:value==='loaded'?`Loaded (${queueCounts.loaded})`:`Needs review (${queueCounts['needs-review']})`}</button>)}
-              <button type="button" className="cancel-button" style={{width:'auto',padding:'10px 14px',marginLeft:'auto'}} onClick={()=>setQueue(current=>current.filter(i=>!['loaded','published'].includes(i.status)))}>Clear finished</button>
+        <section className="ai-importer pipeline-combined">
+          <div className="pipeline-block queue-block">
+            <div className="ai-importer-heading">
+              <div>
+                <span className="ai-spark">🚀</span>
+                <div>
+                  <span className="mini-label">PRODUCT PIPELINE</span>
+                  <h2>Queue Amazon products</h2>
+                </div>
+              </div>
+              <span className="phase-chip">{queue.length} in queue</span>
             </div>
-            <div className="admin-product-list">{filteredQueue.length?filteredQueue.map((item,index)=><article className="admin-item" key={item.id}><div style={{minWidth:0,flex:1}}><h3>{item.asin?`ASIN ${item.asin}`:`Product ${index+1}`}</h3><p style={{wordBreak:'break-all'}}>{item.url}</p><small>Status: {item.status}{item.note?` · ${item.note}`:''}</small></div><div className="item-actions"><button type="button" onClick={()=>loadQueueItem(item)} disabled={!item.asin}>Load</button><button type="button" className="delete" onClick={()=>setQueue(current=>current.filter(q=>q.id!==item.id))}>Remove</button></div></article>):<div className="empty-list">No products in this queue view.</div>}</div>
-          </div></div>}
-        </section>
 
-        <section className="ai-importer single-product-generator">
-          <div className="ai-importer-heading"><div><span className="ai-spark">✦</span><div><span className="mini-label">AMAZON + AI PIPELINE</span><h2>Prepare one queued product</h2></div></div><span className="phase-chip">Amazon-ready</span></div>
-          <div className="ai-url-row"><label>Amazon product URL<input type="url" value={importer.amazonUrl} onChange={e=>updateAmazonUrl(e.target.value)} placeholder="https://www.amazon.com/dp/B0..."/></label><div className={`asin-box ${asin?'found':''}`}><small>ASIN</small><strong>{asin || 'Auto-detect'}</strong></div></div>
-          {existingProduct && !form.id && <div className="phase-note" style={{borderColor:'#f0b429'}}>
-            <strong>Already published:</strong> {existingProduct.title}
-            <button type="button" className="cancel-button" style={{width:'auto',padding:'8px 12px',marginLeft:'10px'}} onClick={()=>editProduct(existingProduct)}>Edit existing product</button>
-          </div>}
-          <button type="button" className="amazon-fetch-button" onClick={handleAmazonFetch} disabled={amazonLoading || !asin || Boolean(existingProduct && !form.id)}>{amazonLoading?'Connecting to Amazon…':'↓ Import official Amazon data'}</button>
-          {amazonMessage && <p className="amazon-message">{amazonMessage}</p>}
-          <div className="ai-source-grid"><label>Amazon product title<input value={importer.title} onChange={e=>updateImporter('title',e.target.value)} placeholder="Roborock Q10 S5+ Robot Vacuum and Mop"/></label><label>Category<select value={importer.category} onChange={e=>updateImporter('category',e.target.value)}><option value="electronics">Tech</option><option value="home">Home</option><option value="beauty">Beauty</option><option value="lifestyle">Lifestyle</option><option value="fitness">Fitness</option></select></label></div>
-          <label>Amazon bullet points / product facts<textarea className="source-facts" value={importer.features} onChange={e=>updateImporter('features',e.target.value)} placeholder={'Paste the main Amazon facts here for now, for example:\n• 10,000Pa suction\n• 70-day self-emptying\n• Sonic mopping\n• Obstacle avoidance'}/></label>
-          <div className="phase-note"><strong>Ready for Amazon Creators API:</strong> until your credentials are approved, use the manual title/facts. Once credentials are added, the Import button fills official product data without changing this workflow.</div>
-          <button type="button" className="generate-button" onClick={handlePrepareAutomatically} disabled={autoPreparing || generating || Boolean(existingProduct && !form.id)}>
-            {autoPreparing ? '✨ Preparing product automatically…' : '✨ Prepare Product Automatically'}
-          </button>
-          <button type="button" className="cancel-button" style={{marginTop:'10px'}} onClick={handleGenerate} disabled={generating || autoPreparing}>
-            {generating ? '✦ Generating English + Spanish…' : 'AI only (manual fallback)'}
-          </button>
-          {aiMessage && <p className="ai-message">{aiMessage}</p>}
+            <label>
+              Amazon URLs — one per line
+              <textarea
+                className="source-facts"
+                value={bulkUrls}
+                onChange={e=>setBulkUrls(e.target.value)}
+                placeholder={'https://www.amazon.com/dp/B0...\nhttps://www.amazon.com/dp/B0...\nhttps://www.amazon.com/dp/B0...'}
+              />
+            </label>
+
+            <button type="button" className="generate-button" onClick={handleQueueProducts} disabled={!bulkUrls.trim()}>
+              🚀 Queue Products
+            </button>
+
+            {queueMessage && <p className="ai-message">{queueMessage}</p>}
+
+            {queue.length > 0 && (
+              <div className="content-pack queue-results">
+                <div className="content-pack-body">
+                  <div className="queue-filter-row">
+                    {['all','queued','loaded','needs-review'].map(value => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={queueFilter===value?'publish-button':'cancel-button'}
+                        onClick={()=>setQueueFilter(value)}
+                      >
+                        {value==='all'
+                          ? `All (${queueCounts.all})`
+                          : value==='queued'
+                            ? `Queued (${queueCounts.queued})`
+                            : value==='loaded'
+                              ? `Loaded (${queueCounts.loaded})`
+                              : `Needs review (${queueCounts['needs-review']})`}
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      className="cancel-button clear-finished-button"
+                      onClick={()=>setQueue(current=>current.filter(i=>!['loaded','published'].includes(i.status)))}
+                    >
+                      Clear finished
+                    </button>
+                  </div>
+
+                  <div className="admin-product-list queue-product-list">
+                    {filteredQueue.length ? filteredQueue.map((item,index)=>(
+                      <article className="admin-item" key={item.id}>
+                        <div className="queue-item-copy">
+                          <h3>{item.asin?`ASIN ${item.asin}`:`Product ${index+1}`}</h3>
+                          <p>{item.url}</p>
+                          <small>Status: {item.status}{item.note?` · ${item.note}`:''}</small>
+                        </div>
+                        <div className="item-actions">
+                          <button type="button" onClick={()=>loadQueueItem(item)} disabled={!item.asin}>Load</button>
+                          <button type="button" className="delete" onClick={()=>setQueue(current=>current.filter(q=>q.id!==item.id))}>Remove</button>
+                        </div>
+                      </article>
+                    )) : (
+                      <div className="empty-list">No products in this queue view.</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="pipeline-divider">
+            <span>OR PREPARE ONE PRODUCT</span>
+          </div>
+
+          <div className="pipeline-block single-product-generator">
+            <div className="ai-importer-heading">
+              <div>
+                <span className="ai-spark">✦</span>
+                <div>
+                  <span className="mini-label">AMAZON + AI PIPELINE</span>
+                  <h2>Prepare one queued product</h2>
+                </div>
+              </div>
+              <span className="phase-chip">Amazon-ready</span>
+            </div>
+
+            <div className="ai-url-row">
+              <label>
+                Amazon product URL
+                <input
+                  type="url"
+                  value={importer.amazonUrl}
+                  onChange={e=>updateAmazonUrl(e.target.value)}
+                  placeholder="https://www.amazon.com/dp/B0..."
+                />
+              </label>
+
+              <div className={`asin-box ${asin?'found':''}`}>
+                <small>ASIN</small>
+                <strong>{asin || 'Auto-detect'}</strong>
+              </div>
+            </div>
+
+            {existingProduct && !form.id && (
+              <div className="phase-note duplicate-warning">
+                <strong>Already published:</strong> {existingProduct.title}
+                <button type="button" className="cancel-button" onClick={()=>editProduct(existingProduct)}>
+                  Edit existing product
+                </button>
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="amazon-fetch-button"
+              onClick={handleAmazonFetch}
+              disabled={amazonLoading || !asin || Boolean(existingProduct && !form.id)}
+            >
+              {amazonLoading?'Connecting to Amazon…':'↓ Import official Amazon data'}
+            </button>
+
+            {amazonMessage && <p className="amazon-message">{amazonMessage}</p>}
+
+            <div className="ai-source-grid">
+              <label>
+                Amazon product title
+                <input
+                  value={importer.title}
+                  onChange={e=>updateImporter('title',e.target.value)}
+                  placeholder="Roborock Q10 S5+ Robot Vacuum and Mop"
+                />
+              </label>
+
+              <label>
+                Category
+                <select value={importer.category} onChange={e=>updateImporter('category',e.target.value)}>
+                  <option value="electronics">Tech</option>
+                  <option value="home">Home</option>
+                  <option value="beauty">Beauty</option>
+                  <option value="lifestyle">Lifestyle</option>
+                  <option value="fitness">Fitness</option>
+                  <option value="pets">Pets</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Amazon bullet points / product facts
+              <textarea
+                className="source-facts"
+                value={importer.features}
+                onChange={e=>updateImporter('features',e.target.value)}
+                placeholder={'Paste the main Amazon facts here for now, for example:\n• 10,000Pa suction\n• 70-day self-emptying\n• Sonic mopping\n• Obstacle avoidance'}
+              />
+            </label>
+
+            <div className="phase-note">
+              <strong>Ready for Amazon Creators API:</strong> until your credentials are approved, use the manual title/facts. Once credentials are added, the Import button fills official product data without changing this workflow.
+            </div>
+
+            <button
+              type="button"
+              className="generate-button"
+              onClick={handlePrepareAutomatically}
+              disabled={autoPreparing || generating || Boolean(existingProduct && !form.id)}
+            >
+              {autoPreparing ? '✨ Preparing product automatically…' : '✨ Prepare Product Automatically'}
+            </button>
+
+            <button
+              type="button"
+              className="cancel-button ai-fallback-button"
+              onClick={handleGenerate}
+              disabled={generating || autoPreparing}
+            >
+              {generating ? '✦ Generating English + Spanish…' : 'AI only (manual fallback)'}
+            </button>
+
+            {aiMessage && <p className="ai-message">{aiMessage}</p>}
+          </div>
         </section>
 
         <div className="admin-grid">
-          <form className="product-form" onSubmit={handleSubmit}><h2>{form.id?'Edit product':'Review & publish'}</h2>
-            <label>Product image<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{const selected=e.target.files[0]||null;setFile(selected);if(selected)setPreview(URL.createObjectURL(selected));}}/></label><div className="image-preview" style={preview?{backgroundImage:`url("${preview}")`}:{}}>{preview?'':'Image preview · Amazon API will import this automatically later'}</div>
+          <form className={`product-form ${form.id ? 'editing-product' : ''}`} onSubmit={handleSubmit}><h2>{form.id?'Edit product':'Review & publish'}</h2>
+            <div className="image-source-card">
+              <div className="image-source-heading">
+                <div>
+                  <strong>Product image</strong>
+                  <span>Upload a file or paste an image URL</span>
+                </div>
+                {preview && <button type="button" className="image-clear-button" onClick={()=>{setFile(null);setPreview('');update('image_url','');}}>Clear image</button>}
+              </div>
+
+              <label className="image-upload-label">
+                Upload image
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={e=>{
+                    const selected=e.target.files[0]||null;
+                    setFile(selected);
+                    if(selected){
+                      setPreview(URL.createObjectURL(selected));
+                    }
+                  }}
+                />
+              </label>
+
+              <label>
+                Image URL
+                <input
+                  type="url"
+                  value={form.image_url || ''}
+                  onChange={e=>{
+                    const value=e.target.value;
+                    update('image_url',value);
+                    setFile(null);
+                    setPreview(value);
+                  }}
+                  placeholder="https://images.example.com/product.jpg"
+                />
+              </label>
+
+              <div className={`image-preview ${preview ? 'has-image' : ''}`}>
+                {preview
+                  ? <img src={preview} alt="Product preview" onError={e=>{e.currentTarget.style.display='none';}}/>
+                  : <span>Image preview · The full product will stay centered inside this box</span>}
+              </div>
+
+              <p className="image-preview-note">Preview uses the same “show the whole product” style we’ll apply to the storefront cards.</p>
+            </div>
             <label>Title<input maxLength="140" required value={form.title} onChange={e=>update('title',e.target.value)} placeholder="Wireless Earbuds"/></label>
             <label>Quick description<textarea maxLength="220" required value={form.description} onChange={e=>update('description',e.target.value)} placeholder="Noise control · 24-hour playtime"/></label>
             <label>Spanish title <span className="field-note">AI generated</span><input maxLength="140" value={form.title_es} onChange={e=>update('title_es',e.target.value)} placeholder="Audífonos inalámbricos"/></label>
@@ -513,13 +789,79 @@ export default function Admin() {
             {priceSavings(form.original_price, form.price) && <div className="phase-note"><strong>Save ${priceSavings(form.original_price, form.price)}</strong> · {calculateDiscount(form.original_price, form.price).replace('-', '')} OFF</div>}
             <label>Discount expiration <span className="field-note">Private — visitors will not see this date</span><input type="datetime-local" value={form.discount_ends_at} onChange={e=>update('discount_ends_at',e.target.value)}/></label>
             <label>Affiliate link<input type="url" required value={form.affiliate_url} onChange={e=>update('affiliate_url',e.target.value)} placeholder="https://..."/></label>
-            {(form.id || form.image_url) && <label>Existing image URL<input type="url" value={form.image_url} onChange={e=>{update('image_url',e.target.value);setPreview(e.target.value);}} placeholder="https://..."/></label>}
             {(form.seo_title || form.long_description) && <div className="content-pack"><button type="button" className="content-pack-toggle" onClick={()=>setContentPackOpen(v=>!v)}><span>✦ AI Content Pack</span><span>{contentPackOpen?'−':'+'}</span></button>{contentPackOpen && <div className="content-pack-body"><label>SEO title<input value={form.seo_title} onChange={e=>update('seo_title',e.target.value)}/></label><label>SEO title — Spanish<input value={form.seo_title_es} onChange={e=>update('seo_title_es',e.target.value)}/></label><label>Meta description<textarea value={form.meta_description} onChange={e=>update('meta_description',e.target.value)}/></label><label>Meta description — Spanish<textarea value={form.meta_description_es} onChange={e=>update('meta_description_es',e.target.value)}/></label><label>Long description<textarea className="long-text" value={form.long_description} onChange={e=>update('long_description',e.target.value)}/></label><label>Long description — Spanish<textarea className="long-text" value={form.long_description_es} onChange={e=>update('long_description_es',e.target.value)}/></label><div className="ai-list-preview"><div><strong>Keywords</strong><p>{arr(form.keywords).join(' · ') || '—'}</p></div><div><strong>Pros</strong><p>{arr(form.pros).join(' · ') || '—'}</p></div><div><strong>Cons</strong><p>{arr(form.cons).join(' · ') || '—'}</p></div></div></div>}</div>}
             <label className="check"><input type="checkbox" checked={form.is_active} onChange={e=>update('is_active',e.target.checked)}/> Show this product on the website</label>
             <div className="form-actions"><button className="publish-button" disabled={saving}>{saving?'Publishing…':form.id?'Save changes':'Publish product'}</button>{form.id && <button type="button" className="cancel-button" onClick={reset}>Cancel edit</button>}</div><p id="formMessage">{message}</p>
           </form>
 
-          <section className="product-list-shell"><div className="list-heading"><h2>Published products</h2><span>{products.length} product{products.length===1?'':'s'}</span></div><div className="admin-product-list">{products.length?products.map(p=><article className="admin-item" key={p.id}><img src={p.image_url} alt=""/><div><h3>{p.title}</h3><p>${Number(p.price).toFixed(2)} · {p.category} · {p.is_active===false?'Hidden':'Live'}</p>{p.asin && <small>ASIN {p.asin}</small>}</div><div className="item-actions"><button type="button" onClick={()=>editProduct(p)}>Edit</button><button type="button" className="delete" onClick={async()=>{if(confirm('Delete this product?')){await deleteProduct(p.id);await loadProducts();}}}>Delete</button></div></article>):<div className="empty-list">No products yet. Add your first one.</div>}</div></section>
+          <section className="product-list-shell">
+            <div className="list-heading">
+              <div>
+                <h2>Published products</h2>
+                <span>{filteredProducts.length} of {products.length} product{products.length===1?'':'s'}</span>
+              </div>
+            </div>
+
+            <div className="catalog-tools">
+              <input
+                type="search"
+                value={productSearch}
+                onChange={e=>setProductSearch(e.target.value)}
+                placeholder="Search title, ASIN, or category..."
+              />
+              <select value={productCategory} onChange={e=>setProductCategory(e.target.value)}>
+                <option value="all">All categories</option>
+                <option value="electronics">Tech</option>
+                <option value="home">Home</option>
+                <option value="beauty">Beauty</option>
+                <option value="lifestyle">Lifestyle</option>
+                <option value="fitness">Fitness</option>
+                <option value="pets">Pets</option>
+              </select>
+              <select value={productStatus} onChange={e=>setProductStatus(e.target.value)}>
+                <option value="all">All status</option>
+                <option value="live">Live</option>
+                <option value="hidden">Hidden</option>
+              </select>
+              <select value={productSort} onChange={e=>setProductSort(e.target.value)}>
+                <option value="newest">Newest</option>
+                <option value="discount">Biggest discount</option>
+                <option value="rating">Highest rating</option>
+                <option value="price-low">Price: low to high</option>
+                <option value="price-high">Price: high to low</option>
+              </select>
+            </div>
+
+            <div className="admin-product-list">
+              {filteredProducts.length ? filteredProducts.map(p => (
+                <article className="admin-item" key={p.id}>
+                  <img src={p.image_url} alt=""/>
+                  <div>
+                    <h3>{p.title}</h3>
+                    <p>${Number(p.price).toFixed(2)} · {p.category} · {p.is_active===false?'Hidden':'Live'}</p>
+                    {p.asin && <small>ASIN {p.asin}</small>}
+                  </div>
+                  <div className="item-actions">
+                    <button type="button" onClick={()=>editProduct(p)}>Edit</button>
+                    <button
+                      type="button"
+                      className="delete"
+                      onClick={async()=>{
+                        if(confirm('Delete this product?')){
+                          await deleteProduct(p.id);
+                          await loadProducts();
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              )) : (
+                <div className="empty-list">No products match your filters.</div>
+              )}
+            </div>
+          </section>
         </div>
       </section>}
     </main>

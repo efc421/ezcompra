@@ -6,3 +6,589 @@
 @media(max-width:720px){.ai-url-row,.ai-source-grid{grid-template-columns:1fr}.asin-box{height:56px}.ai-importer{padding:18px;border-radius:16px}.ai-importer-heading{align-items:flex-start}.phase-chip{display:none}}
 
 .amazon-fetch-button{width:100%;margin:12px 0 4px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;border-radius:14px;padding:14px 18px;font-weight:800;cursor:pointer}.amazon-fetch-button:hover{background:rgba(255,255,255,.17)}.amazon-fetch-button:disabled{opacity:.55;cursor:not-allowed}.amazon-message{margin:10px 0 4px;padding:11px 14px;border-radius:12px;background:rgba(255,255,255,.09);color:#eaf6ff;font-weight:650}
+
+/* =========================================================
+   ADMIN DASHBOARD REDESIGN — STEP 1
+   Visual/layout only. No Supabase logic changes.
+========================================================= */
+
+main{
+  max-width:1440px;
+  padding:34px 32px 56px;
+}
+
+.dashboard-title{
+  align-items:center;
+  margin-bottom:18px;
+}
+
+.dashboard-title h1{
+  font-size:38px;
+  margin-bottom:4px;
+}
+
+.dashboard-title p{
+  margin:0;
+}
+
+/* Top pipeline section */
+.ai-importer{
+  border-radius:18px;
+  padding:20px;
+  margin:16px 0;
+}
+
+.ai-importer-heading{
+  margin-bottom:14px;
+}
+
+.ai-importer h2{
+  font-size:20px;
+}
+
+.ai-spark{
+  width:42px;
+  height:42px;
+  font-size:21px;
+  border-radius:12px;
+}
+
+/* Make the first two workflow blocks feel tighter */
+.ai-importer + .ai-importer{
+  margin-top:14px;
+}
+
+.source-facts{
+  min-height:105px !important;
+}
+
+.generate-button{
+  min-height:46px;
+}
+
+.amazon-fetch-button{
+  min-height:44px;
+  margin-top:8px;
+}
+
+/* Main dashboard workspace */
+.admin-grid{
+  grid-template-columns:minmax(560px,1.15fr) minmax(500px,1fr);
+  gap:18px;
+  align-items:start;
+  margin-top:18px;
+}
+
+.product-form,
+.product-list-shell{
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 8px 26px rgba(21,81,126,.08);
+}
+
+/* Editor heading */
+.product-form h2{
+  font-size:20px;
+  padding-bottom:14px;
+  margin-bottom:18px;
+  border-bottom:1px solid var(--line);
+}
+
+/* Inputs */
+.product-form label{
+  margin-bottom:12px;
+}
+
+.product-form input,
+.product-form select,
+.product-form textarea{
+  border-radius:9px;
+  padding:11px 12px;
+}
+
+/* Product image */
+.image-preview{
+  height:155px;
+  border-radius:10px;
+}
+
+/* Pricing */
+.two-fields{
+  gap:10px;
+}
+
+.phase-note{
+  margin:6px 0 12px;
+}
+
+/* Publish controls */
+.form-actions{
+  margin-top:14px;
+}
+
+.publish-button{
+  min-height:46px;
+}
+
+.check{
+  padding:10px 0;
+  margin-bottom:4px;
+}
+
+/* Published products panel */
+.product-list-shell{
+  max-height:850px;
+  overflow:hidden;
+}
+
+.list-heading{
+  align-items:center;
+  padding-bottom:12px;
+  margin-bottom:2px;
+}
+
+.list-heading h2{
+  margin:0;
+  font-size:20px;
+}
+
+.admin-product-list{
+  max-height:760px;
+  overflow-y:auto;
+  padding-right:4px;
+}
+
+.admin-item{
+  grid-template-columns:54px 1fr auto;
+  gap:11px;
+  padding:11px 0;
+}
+
+.admin-item img{
+  width:54px;
+  height:54px;
+  border-radius:9px;
+}
+
+.admin-item h3{
+  font-size:13px;
+  line-height:1.25;
+  margin-bottom:3px;
+}
+
+.admin-item p{
+  font-size:10.5px;
+}
+
+.admin-item small{
+  font-size:8.5px;
+}
+
+.item-actions button{
+  padding:6px 8px;
+  font-size:10px;
+}
+
+/* Better scrollbar */
+.admin-product-list::-webkit-scrollbar{
+  width:7px;
+}
+
+.admin-product-list::-webkit-scrollbar-thumb{
+  background:#cdddea;
+  border-radius:10px;
+}
+
+/* Responsive */
+@media(max-width:1100px){
+  .admin-grid{
+    grid-template-columns:1fr;
+  }
+
+  .product-list-shell{
+    max-height:none;
+  }
+
+  .admin-product-list{
+    max-height:none;
+  }
+}
+
+@media(max-width:700px){
+  main{
+    padding:24px 14px 40px;
+  }
+
+  .dashboard-title h1{
+    font-size:32px;
+  }
+
+  .product-form,
+  .product-list-shell{
+    padding:16px;
+  }
+}
+
+/* =========================================================
+   ADMIN CATALOG POLISH — STEP 2
+   Sticky search / filters inside Published Products
+========================================================= */
+
+.product-list-shell{
+  display:flex;
+  flex-direction:column;
+  max-height:850px;
+  overflow:hidden;
+}
+
+.product-list-shell .list-heading{
+  flex:0 0 auto;
+  background:#fff;
+  position:relative;
+  z-index:3;
+}
+
+.catalog-tools{
+  display:grid;
+  grid-template-columns:minmax(180px,1.5fr) repeat(3,minmax(120px,.8fr));
+  gap:8px;
+  flex:0 0 auto;
+  position:sticky;
+  top:0;
+  z-index:4;
+  background:#fff;
+  padding:10px 0 12px;
+  border-bottom:1px solid var(--line);
+  box-shadow:0 8px 14px rgba(9,45,103,.04);
+}
+
+.catalog-tools input,
+.catalog-tools select{
+  min-height:40px;
+  margin:0;
+  padding:9px 10px;
+  font-size:11px;
+  border-radius:9px;
+}
+
+.catalog-tools input[type="search"]{
+  font-size:12px;
+}
+
+.admin-product-list{
+  flex:1 1 auto;
+  min-height:0;
+  max-height:none;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding-right:5px;
+  scroll-behavior:smooth;
+}
+
+.admin-item{
+  transition:background .16s ease, transform .16s ease;
+}
+
+.admin-item:hover{
+  background:#f8fcff;
+}
+
+.item-actions button{
+  cursor:pointer;
+  transition:border-color .15s ease, background .15s ease, transform .15s ease;
+}
+
+.item-actions button:hover{
+  background:#f3faff;
+  border-color:#b9dff5;
+  transform:translateY(-1px);
+}
+
+.item-actions .delete:hover{
+  background:#fff5f7;
+  border-color:#f2c5ce;
+}
+
+@media(max-width:1250px){
+  .catalog-tools{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media(max-width:1100px){
+  .product-list-shell{
+    max-height:none;
+    overflow:visible;
+  }
+
+  .catalog-tools{
+    position:sticky;
+    top:0;
+  }
+
+  .admin-product-list{
+    max-height:650px;
+  }
+}
+
+@media(max-width:600px){
+  .catalog-tools{
+    grid-template-columns:1fr;
+  }
+
+  .admin-product-list{
+    max-height:560px;
+  }
+}
+
+
+/* =========================================================
+   ADMIN SMART EDIT — STEP 3
+   Clear sticky spacing + visual editing state
+========================================================= */
+
+.catalog-tools{
+  margin-bottom:2px;
+}
+
+.admin-product-list{
+  padding-top:6px;
+  scroll-padding-top:74px;
+}
+
+.admin-product-list .admin-item:first-child{
+  margin-top:0;
+}
+
+.product-form{
+  scroll-margin-top:18px;
+}
+
+.product-form.editing-product{
+  border-color:#9fd8fb;
+  box-shadow:
+    0 0 0 3px rgba(7,139,240,.07),
+    0 10px 30px rgba(21,81,126,.10);
+}
+
+.product-form.editing-product > h2{
+  color:#087bd7;
+}
+
+@media(max-width:1100px){
+  .product-form{
+    scroll-margin-top:14px;
+  }
+}
+
+
+/* =========================================================
+   ADMIN IMAGE WORKFLOW — STEP 5
+   File upload + image URL + storefront-style preview
+========================================================= */
+
+.image-source-card{
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,#fbfeff,#f6fbff);
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:16px;
+}
+
+.image-source-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+
+.image-source-heading strong{
+  display:block;
+  font-size:13px;
+  color:var(--deep);
+}
+
+.image-source-heading span{
+  display:block;
+  margin-top:3px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:500;
+}
+
+.image-clear-button{
+  border:1px solid #d8e7f1;
+  background:#fff;
+  color:var(--muted);
+  border-radius:8px;
+  padding:6px 9px;
+  font-size:10px;
+  cursor:pointer;
+}
+
+.image-clear-button:hover{
+  color:var(--red);
+  border-color:#f0c6cf;
+  background:#fff7f8;
+}
+
+.image-upload-label{
+  margin-bottom:10px;
+}
+
+.image-source-card .image-preview{
+  height:220px;
+  margin:4px 0 8px;
+  padding:14px;
+  background:#fff;
+  border:1px dashed #b9d7e8;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+
+.image-source-card .image-preview.has-image{
+  border-style:solid;
+}
+
+.image-source-card .image-preview img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center;
+  display:block;
+}
+
+.image-source-card .image-preview span{
+  max-width:260px;
+  text-align:center;
+  line-height:1.45;
+  color:#91a2b2;
+  font-size:11px;
+}
+
+.image-preview-note{
+  margin:0;
+  color:#7d8fa4;
+  font-size:9.5px;
+  line-height:1.45;
+}
+
+@media(max-width:600px){
+  .image-source-heading{
+    align-items:flex-start;
+  }
+
+  .image-source-card .image-preview{
+    height:190px;
+  }
+}
+
+
+/* =========================================================
+   ADMIN PIPELINE MERGE — STEP 6
+   Queue + single-product preparation in one workspace
+========================================================= */
+
+.pipeline-combined{
+  padding:0;
+  overflow:hidden;
+}
+
+.pipeline-block{
+  padding:20px;
+}
+
+.pipeline-divider{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:38px;
+  color:#aadcf8;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.15em;
+}
+
+.pipeline-divider::before,
+.pipeline-divider::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:rgba(255,255,255,.14);
+}
+
+.pipeline-divider span{
+  padding:0 14px;
+  white-space:nowrap;
+}
+
+.queue-results{
+  margin-top:16px;
+}
+
+.queue-filter-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+}
+
+.queue-filter-row .publish-button,
+.queue-filter-row .cancel-button{
+  width:auto;
+  padding:9px 12px;
+  font-size:10px;
+}
+
+.clear-finished-button{
+  margin-left:auto;
+}
+
+.queue-product-list{
+  max-height:300px;
+}
+
+.queue-item-copy{
+  min-width:0;
+  flex:1;
+}
+
+.queue-item-copy p{
+  word-break:break-all;
+}
+
+.duplicate-warning{
+  border-color:#f0b429 !important;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.duplicate-warning .cancel-button{
+  width:auto;
+  padding:7px 10px;
+}
+
+.ai-fallback-button{
+  margin-top:10px;
+}
+
+@media(max-width:720px){
+  .pipeline-block{
+    padding:18px;
+  }
+
+  .clear-finished-button{
+    margin-left:0;
+  }
+
+  .duplicate-warning{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
