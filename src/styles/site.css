@@ -422,3 +422,102 @@
     font-size:11px;
   }
 }
+
+
+/* =========================================================
+   FAVORITES — HEART BUTTON + SAVED DEALS
+========================================================= */
+
+.heart{
+  display:grid;
+  place-items:center;
+  transition:
+    transform .16s ease,
+    background .16s ease,
+    color .16s ease,
+    box-shadow .16s ease;
+}
+
+.heart span{
+  display:block;
+  line-height:1;
+}
+
+.heart:hover{
+  transform:scale(1.06);
+}
+
+.heart:active{
+  transform:scale(.92);
+}
+
+.heart.is-favorite{
+  background:#fff0f4;
+  color:var(--red);
+  box-shadow:
+    0 5px 16px rgba(255,61,103,.18),
+    inset 0 0 0 1px rgba(255,61,103,.10);
+}
+
+.heart.is-favorite span{
+  animation:favorite-pop .22s ease;
+}
+
+@keyframes favorite-pop{
+  0%{transform:scale(.65)}
+  65%{transform:scale(1.22)}
+  100%{transform:scale(1)}
+}
+
+.bottom-nav button{
+  position:relative;
+  min-width:60px;
+  border:0;
+  background:transparent;
+  padding:0;
+  color:#66798d;
+  font-size:10px;
+  text-align:center;
+}
+
+.bottom-nav button>span{
+  display:block;
+  margin-bottom:2px;
+  font-size:23px;
+  line-height:1;
+}
+
+.bottom-nav button.active{
+  color:var(--blue);
+}
+
+.favorite-nav-button.active>span{
+  color:var(--red);
+}
+
+.favorite-count{
+  position:absolute;
+  top:-5px;
+  right:8px;
+  min-width:17px;
+  height:17px;
+  padding:0 4px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  background:var(--red);
+  color:#fff;
+  font-size:9px;
+  font-weight:900;
+  box-shadow:0 3px 8px rgba(255,61,103,.22);
+}
+
+@media(max-width:620px){
+  .bottom-nav button{
+    flex:1;
+  }
+
+  .heart.is-favorite{
+    background:#fff1f5;
+  }
+}

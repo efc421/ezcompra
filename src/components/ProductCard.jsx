@@ -1,6 +1,12 @@
 import React from 'react';
 
-export default function ProductCard({ product, language, t }) {
+export default function ProductCard({
+  product,
+  language,
+  t,
+  isFavorite = false,
+  onToggleFavorite
+}) {
   const title =
     language === 'es' && product.title_es
       ? product.title_es
@@ -54,7 +60,6 @@ export default function ProductCard({ product, language, t }) {
 
   return (
     <article className="product-card">
-
       <div className="product-image-area">
         <a
           href={productUrl}
@@ -83,23 +88,28 @@ export default function ProductCard({ product, language, t }) {
 
         <button
           type="button"
-          className="heart"
-          aria-label={`${t.save} ${title}`}
+          className={`heart ${isFavorite ? 'is-favorite' : ''}`}
+          aria-label={
+            isFavorite
+              ? `${t.removeFavorite}: ${title}`
+              : `${t.save}: ${title}`
+          }
+          aria-pressed={isFavorite}
+          title={isFavorite ? t.removeFavorite : t.save}
           onClick={event => {
             event.preventDefault();
             event.stopPropagation();
+            onToggleFavorite?.();
           }}
         >
-          ♡
+          <span aria-hidden="true">
+            {isFavorite ? '♥' : '♡'}
+          </span>
         </button>
       </div>
 
       <div className="product-card-content">
-
-        <a
-          href={productUrl}
-          className="product-card-title"
-        >
+        <a href={productUrl} className="product-card-title">
           {title}
         </a>
 
@@ -110,14 +120,8 @@ export default function ProductCard({ product, language, t }) {
         )}
 
         <div className="product-rating">
-          <span className="stars">
-            {stars}
-          </span>
-
-          <span>
-            {rating.toFixed(1)}
-          </span>
-
+          <span className="stars">{stars}</span>
+          <span>{rating.toFixed(1)}</span>
           <span className="review-count">
             ({product.review_count || t.newLabel})
           </span>
@@ -135,10 +139,7 @@ export default function ProductCard({ product, language, t }) {
           )}
         </div>
 
-        <a
-          href={productUrl}
-          className="view-deal-button"
-        >
+        <a href={productUrl} className="view-deal-button">
           <span>{t.viewDeal}</span>
           <span>→</span>
         </a>
@@ -148,9 +149,7 @@ export default function ProductCard({ product, language, t }) {
             ? '(enlace de afiliado)'
             : '(paid link)'}
         </div>
-
       </div>
-
     </article>
   );
 }
