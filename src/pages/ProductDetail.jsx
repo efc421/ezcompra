@@ -133,7 +133,26 @@ export default function ProductDetail() {
   const specs =
     product.specifications &&
     typeof product.specifications === 'object'
-      ? Object.entries(product.specifications)
+      ? Object.entries(product.specifications).filter(([key, value]) => {
+          const normalizedKey = String(key).toLowerCase().replace(/[_\s-]+/g, '');
+          const stringValue = String(value || '').trim().toLowerCase();
+
+          const isLinkField =
+            normalizedKey.includes('url') ||
+            normalizedKey.includes('link') ||
+            normalizedKey.includes('affiliate') ||
+            normalizedKey.includes('amazonurl') ||
+            normalizedKey.includes('producturl');
+
+          const looksLikeUrl =
+            stringValue.startsWith('http://') ||
+            stringValue.startsWith('https://') ||
+            stringValue.includes('amazon.com/') ||
+            stringValue.includes('bestbuy.com/') ||
+            stringValue.includes('walmart.com/');
+
+          return !isLinkField && !looksLikeUrl;
+        })
       : [];
 
   const money = value =>
