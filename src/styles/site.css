@@ -521,3 +521,14 @@
     background:#fff1f5;
   }
 }
+
+/* Desktop-only subtle lift on product cards */
+@media (hover: hover) and (pointer: fine) {
+  .product-card {
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+  }
+}
