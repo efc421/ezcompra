@@ -38,7 +38,11 @@ const translations = {
     resultSingular: 'find',
     resultPlural: 'finds',
     save: 'Save',
-    removeFavorite: 'Remove from favorites'
+    removeFavorite: 'Remove from favorites',
+    trendingTitle: 'Trending Deals Today',
+    trustHandpicked: 'Hand-picked deals',
+    trustRatings: 'Real product ratings',
+    trustRetailers: 'Direct to trusted retailers'
   },
   es: {
     searchPlaceholder: 'Busca productos, marcas y más',
@@ -71,7 +75,11 @@ const translations = {
     resultSingular: 'producto',
     resultPlural: 'productos',
     save: 'Guardar',
-    removeFavorite: 'Quitar de favoritos'
+    removeFavorite: 'Quitar de favoritos',
+    trendingTitle: 'Ofertas en Tendencia Hoy',
+    trustHandpicked: 'Ofertas seleccionadas',
+    trustRatings: 'Calificaciones reales',
+    trustRetailers: 'Directo a tiendas confiables'
   }
 };
 
@@ -148,6 +156,11 @@ export default function Home() {
       return categoryMatch && favoriteMatch && text.includes(normalizedQuery);
     });
   }, [products, query, activeCategory, view, favoriteSet]);
+
+  const trending = useMemo(() => {
+    // Reuse existing product data; pick up to 8 as today's trending
+    return products.slice(0, 8);
+  }, [products]);
 
   function toggleFavorite(productId) {
     const id = String(productId);
@@ -256,6 +269,41 @@ export default function Home() {
             <i></i><i></i><i></i>
           </div>
         </section>
+
+        {/* Trending Deals Today */}
+        {trending.length > 0 && (
+          <section className="trending-section">
+            <div className="section-heading">
+              <div>
+                <span className="eyebrow">{t.handpicked}</span>
+                <h2>{t.trendingTitle}</h2>
+              </div>
+              <span>{trending.length} {trending.length === 1 ? t.resultSingular : t.resultPlural}</span>
+            </div>
+
+            <div className="trending-row">
+              {trending.map(product => (
+                <ProductCard
+                  key={`trending-${product.id}`}
+                  product={product}
+                  language={language}
+                  t={t}
+                  isFavorite={favoriteSet.has(String(product.id))}
+                  onToggleFavorite={() => toggleFavorite(product.id)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Trust strip below trending */}
+        {trending.length > 0 && (
+          <section className="trust-strip">
+            <div className="trust-item"><i>✓</i><span>{t.trustHandpicked}</span></div>
+            <div className="trust-item"><i>★</i><span>{t.trustRatings}</span></div>
+            <div className="trust-item"><i>↗</i><span>{t.trustRetailers}</span></div>
+          </section>
+        )}
 
         <section className="category-section" ref={categoriesRef}>
           {categoryOptions.map(([value, key]) => (
