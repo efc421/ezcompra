@@ -141,10 +141,17 @@ export default function Home() {
 
   const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
 
+  // Trending: pick up to 4 for desktop; remains horizontally scrollable on mobile via CSS
+  const trending = useMemo(() => {
+    return products.slice(0, 4);
+  }, [products]);
+
+  const trendingIds = useMemo(() => new Set(trending.map(p => String(p.id))), [trending]);
+
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return products.filter(product => {
+    const base = products.filter(product => {
       const categoryMatch =
         activeCategory === 'all' || product.category === activeCategory;
 
@@ -155,12 +162,14 @@ export default function Home() {
 
       return categoryMatch && favoriteMatch && text.includes(normalizedQuery);
     });
-  }, [products, query, activeCategory, view, favoriteSet]);
 
-  const trending = useMemo(() => {
-    // Reuse existing product data; pick up to 8 as today's trending
-    return products.slice(0, 8);
-  }, [products]);
+    // Exclude trending items from the main Top Deals list (but not in Favorites view)
+    if (view !== 'favorites') {
+      return base.filter(p => !trendingIds.has(String(p.id)));
+    }
+
+    return base;
+  }, [products, query, activeCategory, view, favoriteSet, trendingIds]);
 
   function toggleFavorite(productId) {
     const id = String(productId);
